@@ -4,7 +4,7 @@ import joblib
 import datetime
 
 # Load saved objects
-pipline=joblib.load('C:\\Users\\hp\\PycharmProjects\\PythonProject\\pipeline_temp.pkl')
+pipline=joblib.load('pipeline_temp.pkl')
 
 
 
