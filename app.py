@@ -3,15 +3,83 @@ import numpy as np
 import joblib
 import datetime
 
-# Load saved objects
-pipline=joblib.load('pipeline_temp.pkl')
+st.set_page_config(page_title="🌡️ Temperature Predictor", page_icon="🔥", layout="wide")
 
+# ---------------------------
+# CSS Styling
+# ---------------------------
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: linear-gradient(to bottom, #ffffff 0%, #87CEEB 100%); /* White to sky blue gradient */
+    }
+    .card {
+        background: white;
+        padding: 18px;
+        border-radius: 14px;
+        box-shadow: 0 6px 18px rgba(17, 24, 39, 0.08);
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        margin-bottom: 1rem;
+    }
+    .title {
+        font-size: 30px;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+    .subtitle {
+        color: #475569;
+        margin-top: -6px;
+        margin-bottom: 16px;
+    }
+    label {
+        color: #0f172a !important;
+        font-weight: 600 !important;
+    }
+    /* Subheader color in cards */
+    .card .css-1d391kg h2 {
+        color: black ;
+    }
+    /* Prediction Button Styling */
+    div.stButton > button {
+        background-color: black;
+        color: white;
+        font-weight: 600;
+        border-radius: 8px;
+        padding: 10px 20px;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    div.stButton > button:hover {
+        background-color: black; /* Keep button black */
+        border-bottom: 4px solid #1d4ed8; /* blue underline glow */
+        box-shadow: 0 6px 12px rgba(37, 99, 235, 0.6); /* blue glow shadow */
+    }
+    /* Result Text Black */
+    .result-text {
+        color: black;
+        font-size: 20px;
+        font-weight: 600;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
+# ---------------------------
+# Load Model
+# ---------------------------
+@st.cache_resource
+def load_model():
+    return joblib.load("pipeline_temp.pkl")
 
+pipeline = load_model()
 
-# ---- Prediction Function ----
+# ---------------------------
+# Prediction Function
+# ---------------------------
 def predict_temp(hum, wind_S, surface_P, date, hour):
-    # Extract features
     day_of_year = date.timetuple().tm_yday
     month = date.month
 
@@ -22,107 +90,57 @@ def predict_temp(hum, wind_S, surface_P, date, hour):
     month_sin = np.sin(2 * np.pi * month / 12)
     month_cos = np.cos(2 * np.pi * month / 12)
 
-    # Features array (2D)
-    x = [[hum, wind_S, surface_P, hour_sin,hour_cos, day_sin,day_cos, month_sin,month_cos]]
-
-    y_pred = pipline.predict(x)
+    x = [[hum, wind_S, surface_P, hour_sin, hour_cos, day_sin, day_cos, month_sin, month_cos]]
+    y_pred = pipeline.predict(x)
     return float(y_pred[0])
 
-# ---- Custom CSS (Dark + Glossy Red/Black Button) ----
-st.markdown("""
-<style>
-:root { --accent-red: #ff2d55; --deep-red: #b3001b; --blk: #0b0b0c; }
-html, body, [class^="css"]  { background-color: #101214; }
-.main { background-color: #101214; color: #e9e9e9; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-.block-container { padding-top: 2rem; padding-bottom: 2rem; }
+# ---------------------------
+# Title
+# ---------------------------
+st.markdown('<div class="title"><span style="color:initial">🌡️</span> Temperature Predictor</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Predict the expected temperature based on weather conditions</div>', unsafe_allow_html=True)
 
-h1, h2, h3 { color: #f5f5f7; }
-.small { color:#a8a8a8; font-size:0.9rem; }
+# ---------------------------
+# Card 1: Date & Hour
+# ---------------------------
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.subheader("📅 Date & Time")
 
-.card {
-  background: #15171a;
-  border: 1px solid #23252b;
-  padding: 1.2rem;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-}
+col1, col2 = st.columns(2)
+with col1:
+    date = st.date_input("Date", value=datetime.date.today())
+with col2:
+    hour = st.slider("Hour of the Day", 0, 23, datetime.datetime.now().hour)
 
-.stSlider label, .stDateInput label { color:#d6d6d6 !important; }
+st.markdown('</div>', unsafe_allow_html=True)
 
-/* Glossy red-on-black button */
-.stButton>button {
-  position: relative;
-  background: linear-gradient(180deg, #131315 0%, #050506 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255,45,85,0.45);
-  border-radius: 14px;
-  padding: 0.85rem 1.25rem;
-  font-weight: 800;
-  letter-spacing: .3px;
-  text-transform: none;
-  box-shadow: 0 8px 22px rgba(255,45,85,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
-  transition: all .18s ease;
-}
-.stButton>button:before {
-  content:'';
-  position:absolute; inset:0 0 auto 0; height:50%;
-  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0));
-  border-top-left-radius:14px; border-top-right-radius:14px;
-  pointer-events:none;
-}
-.stButton>button:hover {
-  transform: translateY(-1px);
-  border-color: var(--accent-red);
-  box-shadow: 0 14px 32px rgba(255,45,85,0.55), inset 0 1px 0 rgba(255,255,255,0.05);
-}
-.stButton>button:active {
-  transform: translateY(0);
-  box-shadow: 0 10px 24px rgba(255,45,85,0.45);
-}
+# ---------------------------
+# Card 2: Weather Conditions
+# ---------------------------
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.subheader("🌬️ Weather Conditions")
 
-/* Tag pills */
-.tag {
-  display:inline-block; background:#1e2025; border:1px solid #2b2d33;
-  border-radius:999px; padding:.25rem .6rem; font-size:.8rem; color:#cfcfcf;
-}
-</style>
-""", unsafe_allow_html=True)
+col3, col4, col5 = st.columns(3)
+with col3:
+    hum = st.number_input("Humidity (%)", min_value=0.0, max_value=100.0, value=60.0, step=0.1)
+with col4:
+    wind_S = st.number_input("Wind Speed (km/h)", min_value=0.0, value=3.0, step=0.1)
+with col5:
+    surface_P = st.number_input("Surface Pressure (hPa)", min_value=800.0, max_value=1100.0, value=1013.0, step=0.1)
 
-# ---- Title ----
-st.markdown("<h1>🌡 Temperature Prediction</h1>", unsafe_allow_html=True)
-st.markdown("<p class='small'>Enter conditions, pick a date & hour, then get your model's temperature prediction.</p>", unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
-# ---- Inputs (Sliders instead of number_input) ----
-with st.container():
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
+# ---------------------------
+# Card 3: Prediction
+# ---------------------------
+st.markdown('<div class="card">', unsafe_allow_html=True)
+st.subheader("🔮 Prediction")
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        hum = st.slider("Humidity (%)", min_value=0.0, max_value=100.0, value=50.0, step=0.1)
-        st.markdown(f"<span class='tag'>Current: {hum:.1f}%</span>", unsafe_allow_html=True)
-
-    with c2:
-        wind_S = st.slider("Wind Speed (km/hr)", min_value=0.0, max_value=40.0, value=5.0, step=0.1)
-        st.markdown(f"<span class='tag'>Current: {wind_S:.1f} m/s</span>", unsafe_allow_html=True)
-
-    with c3:
-        surface_P = st.slider("Surface Pressure (hPa)", min_value=800.0, max_value=1100.0, value=1013.0, step=0.1)
-        st.markdown(f"<span class='tag'>Current: {surface_P:.1f} hPa</span>", unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# Date & Hour
-with st.container():
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
-    c4, c5 = st.columns([2,1])
-    with c4:
-        date = st.date_input("Select Date", datetime.date.today())
-    with c5:
-        hour = st.slider("Hour of Day", 0, 23, 12)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ---- Predict Button ----
 if st.button("Predict Temperature"):
-    temp = predict_temp(float(hum), float(wind_S), float(surface_P), date, int(hour))
-    st.success(f"Predicted Temperature: {temp:.2f} °C")
+    try:
+        result = predict_temp(hum, wind_S, surface_P, date, hour)
+        st.markdown(f'<p class="result-text"><span style="color:initial">🌡️</span> Expected Temperature: {result:.2f} °C</p>', unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Prediction failed: {e}")
+
+st.markdown('</div>', unsafe_allow_html=True)
